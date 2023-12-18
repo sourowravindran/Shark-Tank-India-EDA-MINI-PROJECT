@@ -1,0 +1,221 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import random
+import locale
+
+# Load the data
+data = pd.read_csv("/content/STI.csv")
+data.head()
+
+# Display the shape of the dataset
+data.shape
+
+# Display information about the dataset
+data.info()
+
+# Display descriptive statistics of the dataset
+data.describe()
+
+# Check for null values in the dataset
+data.isnull().sum()
+
+# Explore the columns in the dataset
+data.columns
+
+# Display the maximum number of seasons, episodes, and pitches
+print(data['Season Number'].max(), "seasons \n")
+print(data['Episode Number'].max(), "episodes \n")
+print(data['Pitch Number'].max(), "pitches \n")
+print(data['Episode Number'].value_counts().sort_values(ascending=True).unique(),
+      "Pitches came per episodes")
+
+# Distribution of industries coming for pitches
+colors = ["#{:06x}".format(random.randint(0, 0xFFFFFF)) for _ in range(10)]
+
+df_ind = data['Industry'].value_counts().nlargest(10).sort_values(ascending=True)
+barplot = plt.barh(df_ind.index, df_ind.values, height=0.8, color=colors)
+plt.bar_label(barplot, labels=df_ind.values, label_type="edge")
+plt.xlabel('Industry')
+plt.title('Different Industries came in shark tank india')
+plt.show()
+
+# Gender-wise entrepreneurs
+print(f"Total Number of Presenters: {data['Number of Presenters'].sum()}")
+print(f"Total Male Presenters: {data['Male Presenters'].sum()}")
+print(f"Total female Presenters: {data['Female Presenters'].sum()}")
+print(f"Male entrepreneurs %: {np.round(data['Male Presenters'].sum() / data['Number of Presenters'].sum() * 100)}")
+print(f"Female entrepreneurs %: {np.round(data['Female Presenters'].sum() / data['Number of Presenters'].sum() * 100)}")
+print(f"Couple entrepreneurs %: {np.round(data['Couple Presenters'].sum() / data['Number of Presenters'].sum() * 100)} (Data incomplete)")
+
+# Top 10 highest income startups
+plt.figure(figsize=(10, 5))
+data_top = data.groupby('Startup Name')['Yearly Revenue'].max().nlargest(10)
+
+barplot = plt.bar(data_top.index, data_top.values, color=colors)
+plt.bar_label(barplot, labels=data_top.values, label_type="edge")
+
+plt.ylabel('Yearly Revenue')
+plt.xlabel('Startup Name')
+plt.title('Highest revenue of pitchers')
+plt.xticks(rotation=45)
+plt.legend()
+plt.show()
+
+# Top 10 highest gross margin startups
+data_g = data.groupby('Startup Name')['Gross Margin'].max().nlargest(10)
+
+plt.figure(figsize=(10, 5))
+barplot = plt.bar(data_g.index, data_g.values, color=colors)
+plt.bar_label(barplot, labels=data_g.values, label_type="edge")
+
+plt.ylabel('Gross Margin')
+plt.xlabel('Startup Name')
+plt.title('Top 10 Startups with Highest Gross Margin')
+plt.xticks(rotation=45)
+plt.show()
+
+# Distribution of received and accepted offers
+data_off = data["Received Offer"].value_counts()
+data_off_per = (data_off / data_off.sum()) * 100
+print(f"{np.round(data_off_per, 0)}")
+plt.show()
+print("\n")
+print("**************************************")
+
+plt.bar(data_off_per.index, data_off_per.values, color=colors)
+plt.xlabel("Received offer")
+plt.ylabel("Count")
+plt.xticks(data_off_per.index)
+plt.show()
+print("\n")
+print("**************************************")
+
+print("68% accepted the offer while the remaining could not receive the offer")
+
+# Distribution of accepted offers
+data_af = data["Accepted Offer"].value_counts()
+data_af_per = (data_af / data_af.sum()) * 100
+print(f"{np.round(data_af_per, 0)}")
+plt.show()
+print("\n")
+print("**************************************")
+
+plt.bar(data_af_per.index, data_af_per.values, color=colors)
+plt.xlabel("Accepted Offer")
+plt.ylabel("Count")
+plt.xticks(data_af_per.index)
+plt.show()
+print("\n")
+print("**************************************")
+
+print("81% accepted the offer while the remaining rejected")
+
+# Startups that rejected the shark offer
+rejected_startups = pd.DataFrame(data.loc[data["Accepted Offer"] == 0,
+                                           ['Startup Name', 'Original Ask Amount',
+                                            'Original Offered Equity', 'Valuation Requested']])
+
+# Analysis for Ashneer
+filter = data[data['Ashneer Investment Amount'] > 0]['Industry'].value_counts().sort_values(ascending=False)
+print(filter)
+plt.pie(filter, autopct='%1.2f%%', labels=filter.index)
+plt.show()
+
+df_filter = data.loc[data['Ashneer Investment Amount'] > 0][["Startup Name",
+                                                             "Ashneer Investment Amount",
+                                                             "Ashneer Investment Equity"]].sort_values(by="Ashneer Investment Equity")
+plt.figure(figsize=(10, 5))
+
+sns.barplot(y=df_filter['Ashneer Investment Equity'],
+            x=df_filter['Ashneer Investment Amount'],
+            hue=df_filter["Startup Name"], width=10)
+
+plt.ylabel('Ashneer Investment Equity')
+plt.xlabel('Ashneer Investment Amount')
+plt.title('Total equity received by Ashneer (in %) for investment (in lakhs)')
+plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+plt.show()
+
+# Similar analysis for Vineeta, Amit, Ghazal, Guest
+
+# Number of sharks in deal
+print(np.round(data['Number of sharks in deal'].value_counts() / len(data) * 100), 0)
+
+sns.countplot(data=data, x=data['Number of sharks in deal'])
+print("\n")
+print("***********************************")
+print('The deals where more than or equals to 5 sharks are involved')
+
+# Display deals where more than or equals to 5 sharks are involved
+print(data.loc[data['Number of sharks in deal'] >= 5][["Startup Name",
+                                                       "Total Deal Amount",
+                                                       "Total Deal Equity"]])
+print("\n")
+print("***********************************")
+
+# Total amount invested by sharks
+formatted_sum = locale.format_string('%.2f', data['Original Ask Amount'].sum() / 100, grouping=True)
+print(f"{formatted_sum} INR crores")
+
+Amount = [data['Ashneer Investment Amount'].sum(),
+          data['Namita Investment Amount'].sum(),
+          data['Anupam Investment Amount'].sum(),
+          data['Vineeta Investment Amount'].sum(),
+          data['Aman Investment Amount'].sum(),
+          data['Peyush Investment Amount'].sum(),
+          data['Ghazal Investment Amount'].sum()]
+name = ['Ashneer', 'Namita', 'Anupam', 'Vineeta', 'Aman', 'Peyush', 'Ghazal']
+df = {'Name': name, 'Amount': Amount}
+
+barplot = plt.bar(df["Name"], df["Amount"])
+plt.bar_label(barplot, label=df["Amount"])
+plt.ylabel("Total amount invested")
+plt.title("Total invested amount by sharks ")
+plt.show()
+
+# Total debt amount by sharks
+formatted_sum = locale.format_string('%.2f', data['Total Deal Debt'].sum() / 100, grouping=True)
+print(f"{formatted_sum} INR crores")
+
+Dept = [data['Ashneer Debt Amount'].sum(),
+        data['Namita Debt Amount'].sum(),
+        data['Anupam Debt Amount'].sum(),
+        data['Vineeta Debt Amount'].sum(),
+        data['Aman Debt Amount'].sum(),
+        data['Peyush Debt Amount'].sum(),
+        data['Ghazal Debt Amount'].sum()]
+name = ['Ashneer', 'Namita', 'Anupam', 'Vineeta', 'Aman', 'Peyush', 'Ghazal']
+df_d = {'Name': name, 'Dept': Dept}
+
+barplot = plt.bar(df_d["Name"], df_d["Dept"])
+plt.bar_label(barplot, label=df_d["Dept"])
+plt.ylabel("Total Debt amount")
+plt.title("Total Debt amount by sharks ")
+plt.show()
+
+# Total equity received by sharks
+formatted_sum = locale.format_string('%.2f', data['Total Deal Equity'].sum() / 100, grouping=True)
+print(f"{formatted_sum} INR crores")
+
+Equity = [data['Ashneer Investment Equity'].sum(),
+          data['Namita Investment Equity'].sum(),
+          data['Anupam Investment Equity'].sum(),
+          data['Vineeta Investment Equity'].sum(),
+          data['Aman Investment Equity'].sum(),
+          data['Peyush Investment Equity'].sum(),
+          data['Ghazal Investment Equity'].sum()]
+name = ['Ashneer', 'Namita', 'Anupam', 'Vineeta', 'Aman', 'Peyush', 'Ghazal']
+df_e = {'Name': name, 'equity': Equity}
+
+barplot = plt.bar(df_e["Name"], df_e["equity"])
+plt.bar_label(barplot, label=df_e["equity"])
+plt.ylabel("Total Equity")
+plt.title("Total Equity received by sharks ")
+plt.show()
+
+# Companies with pre-revenue or no revenue
+df2 = data.loc[data['Yearly Revenue'] == 0]
+print(df2['Startup Name'])
